@@ -194,7 +194,7 @@ Navigate to:
 
 The CAN bit rate is defined by the following relationship:
 
-![bitrate formula](/imgs/bitrate.png)
+![bitrate formula](imgs/bitrate.png)
 
 Where:
 - ***f*<sub>Can** is the CAN peripheral clock frequency  
@@ -221,7 +221,7 @@ Assuming a CAN peripheral clock of **48 MHz**:
 - BS1 = 13  
 - BS2 = 2  
 
-![bitrate example](/imgs/bitrate-example.png)
+![bitrate example](imgs/bitrate-example.png)
 
 Once these parameters are set, save the IOC file and regenerate the project to apply the CAN configuration.
 
