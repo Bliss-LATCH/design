@@ -77,7 +77,7 @@ Next you need to add the *Src* and *Inc* directories to your build configuration
 Navigate to:  
 **Project → Properties → C/C++ Build → Settings → Include paths** and add ```../CAN/Inc```.
 
-![can_inc](/imgs/can_inc.png)
+![can_inc](imgs/can_inc.png)
 
 Then select apply and then if you are prompted, Rebuild Index as well.
 
