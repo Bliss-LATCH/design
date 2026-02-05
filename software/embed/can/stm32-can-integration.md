@@ -86,10 +86,90 @@ Now navigate to:
 
 ![can_src](imgs/can_src.png)
 
-Now apply and close and you should be able to build and use the CAN API now!!
-
+Now apply and close and you should be able to build and use the CAN API now!! Just add the header to your ```main.c``` private includes.`
 
 # CAN-API Usage
 
-Now that everything is setup, here is how to use the custom CAN API for your stm device.
+The custom CAN API simplifies the process of filtering, initializing, and communicating over the CAN bus by wrapping the STM32 HAL functions into a device-centric structure.
 
+---
+
+## 1. Define Device and Data Buffers
+In your `main.c` (within the **Private variables** section), define your `CANDevice_t` instance and the buffers needed for transmission and filtering. Below is an example of what this should look like.s
+
+```c
+/* Private variables ---------------------------------------------------------*/
+/* USER CODE BEGIN PV */
+CANDevice_t canDV;
+uint16_t rxIdList[ID_LIST_LEN] = {0x110, 0x120}; // IDs we want to receive
+uint8_t txData[8] = {0x12, 0x0f, 0x23, 0x33, 0x23};
+uint8_t txLen = 5;
+/* USER CODE END PV */
+```
+
+## 2. Initialize the Device
+In the ```main()``` function, after the peripheral initialization calls, initialize the CAN device. This links your device struct to the hardware handle, starts the CAN peripheral, and enables RX interrupts.
+
+**Note:** You must call ```can_config_filter``` to specify which IDs the hardware should accept.
+
+```c
+/* Initialize all configured peripherals */
+MX_GPIO_Init();
+MX_CAN1_Init();
+
+/* USER CODE BEGIN 2 */
+// 1. Link hardware handle and start CAN/Interrupts
+device_can_init(&canDV, &hcan1);
+
+// 2. Configure hardware filters for specific IDs
+can_config_filter(&canDV, rxIdList, ID_LIST_LEN);
+
+// 3. Link your custom callback function
+link_rx_callback(&canDV, can_rx_callback);
+/* USER CODE END 2 */
+```
+
+## 3. Handling Received Data
+To process incoming messages, define the callback function you linked in the previous step. This function is automatically triggered by the internal ```HAL_CAN_RxFifo0MsgPendingCallback``` override whenever a filtered message arrives.
+
+```c
+/* USER CODE BEGIN 4 */
+void can_rx_callback(CANDevice_t *device) {
+    // The received data is automatically stored in device->rxBuffer
+    uint8_t *data = device->rxBuffer;
+    
+    // The message header (ID, DLC, etc.) is available in device->rxHeader
+    uint32_t receivedID = device->rxHeader.StdId;
+
+    // The msgReceived flag is set to true automatically
+    if(device->msgReceived) {
+        // Handle data...
+        device->msgReceived = false; // Reset flag after processing
+    }
+}
+/* USER CODE END 4 */
+```
+
+## 4. Transmitting Data
+
+Use the wrapper function ```transmit_can_data``` to send messages. This function handles the configuration of the ```TxHeader``` (Standard ID, Data Frame) and adds the message to the TX mailbox.
+
+```c
+/* Infinite loop */
+while (1)
+{
+    // Transmit data to a specific ID using the device wrapper
+    transmit_can_data(&canDV, 0x120, txData, txLen);
+    
+    HAL_Delay(500); // Send every 500ms
+}
+```
+
+## API Reference
+
+| Function | Description |
+| :--- | :--- |
+| **`device_can_init`** | Links the HAL handle, clears the buffer, starts the CAN peripheral, and activates RX notifications. |
+| **`can_config_filter`** | Configures filter banks in `IDLIST` mode (up to 4 IDs per bank) using 16-bit scaling. |
+| **`link_rx_callback`** | Assigns a user-defined function to be called immediately when a message is received. |
+| **`transmit_can_data`** | Simplifies transmission by setting up the `TxHeader` and calling `HAL_CAN_AddTxMessage`. |
